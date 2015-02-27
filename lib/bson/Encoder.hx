@@ -1,6 +1,8 @@
 package bson;
 
+import haxe.Int64;
 import haxe.io.*;
+using bson.DateTools;
 
 class Encoder {
     var out:BytesOutput;
@@ -21,11 +23,11 @@ class Encoder {
         out.writeByte(0x00); // terminator
     }
 
-    // function writeInt64(val:Int64)
-    // {
-    //     out.writeInt32(Int64.getLow(val));
-    //     out.writeInt32(Int64.getHigh(val));
-    // }
+    function writeInt64(val:Int64)
+    {
+        out.writeInt32(Int64.getLow(val));
+        out.writeInt32(Int64.getHigh(val));
+    }
 
     function writeHeader(key:String, type:Int):Void
     {
@@ -67,20 +69,20 @@ class Encoder {
         return this;
     }
 
-    // public function appendInt64(key, val:Int64):Encoder
-    // {
-    //     writeHeader(key, 0x12);
-    //     writeRawInt64(out, val);
-        // return this;
-    // }
+    public function appendInt64(key, val:Int64):Encoder
+    {
+        writeHeader(key, 0x12);
+        writeInt64(val);
+        return this;
+    }
 
-    // public function appendDate(key, val:Date):Encoder
-    // {
-    //     var d64 = (val : MongoDate).getTimeInt64();
-    //     writeHeader(key, 0x09);
-    //     writeRawInt64(out, d64);
-        // return this;
-    // }
+    public function appendDate(key, val:Date):Encoder
+    {
+        writeHeader(key, 0x09);
+        var d64 = val.getInt64Time();
+        writeInt64(d64);
+        return this;
+    }
 
     // public function appendArray<T>(key, val:Array<T>):Encoder
     // {

@@ -21,8 +21,6 @@ class TestEncoding {
             return e.getBytes();
         }
         Assert.equals('04000000${HEX_KEY}00', string("key").toHex());
-        
-        // TODO Int64
     }
 
     @:access(bson.Encoder)
@@ -61,7 +59,15 @@ class TestEncoding {
         Assert.equals("1000" + "04".rpad("0", 8), e().appendInt("", 4).getBytes().toHex());
         Assert.equals("1000" + "".rpad("f", 8), e().appendInt("", -1).getBytes().toHex());
 
-        // TODO 03 04 05 07 09 0b 0d 0f 11 12 ff 7f
+        // int64
+        Assert.equals("1200" + "".rpad("0", 16), e().appendInt64("", 0).getBytes().toHex());
+        Assert.equals("1200" + "04".rpad("0", 16), e().appendInt64("", 4).getBytes().toHex());
+        Assert.equals("1200" + "".rpad("f", 16), e().appendInt64("", -1).getBytes().toHex());
+
+        // date
+        Assert.equals("0900" + "78fdff7f".rpad("0", 16), e().appendDate("", Date.fromTime(0x7ffffd78)).getBytes().toHex());
+
+        // TODO 03 04 05 07 09 0b 0d 0f 11 ff 7f
     }
 
     public function new() {}
