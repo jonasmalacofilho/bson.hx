@@ -89,7 +89,10 @@ class TestEncoding {
         // ObjectId
         Assert.equals("0700" + "9bc420000100000200030000", show(e().appendObjectId("", new ObjectId(0x20c49b, 1, 2, 3))));
 
-        // TODO 04 05 07 0b 0d 0f 11 ff 7f
+        // Binary
+        Assert.equals("0500" + "03000000" + "00" + HEX_KEY, show(e().appendBytes("", Bytes.ofString("key"))));
+
+        // TODO 04 0b 0d 0f 11 ff 7f
     }
 
     public function test91_ObjectIdMethods()

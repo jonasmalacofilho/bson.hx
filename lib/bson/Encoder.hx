@@ -30,7 +30,7 @@ class Encoder {
 #end
         var bytes = Bytes.ofString(str);
         out.writeInt32(bytes.length + 1);
-        out.writeBytes(bytes, 0, bytes.length);
+        out.write(bytes);
         out.writeByte(0x00); // terminator
     }
 
@@ -118,6 +118,15 @@ class Encoder {
         return this;
     }
 
+    public function appendBytes(key, val:Bytes):Encoder
+    {
+        writeHeader(key, 0x05);
+        out.writeInt32(val.length);
+        out.writeByte(0x00);  // generic binary subtype
+        out.write(val);
+        return this;
+    }
+
     // public function writeDynamic(key, val:Dynamic)
     // {
     //     writeHeader(key, 0x03);
@@ -129,9 +138,9 @@ class Encoder {
 
     public function getBytes():Bytes
     {
-        out.writeByte(0);
+        out.writeByte(0x00);
         var res = out.getBytes();
-        res.set(0, res.length);
+        res.set(0x00, res.length);
         return res;
     }
 
