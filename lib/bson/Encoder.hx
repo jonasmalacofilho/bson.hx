@@ -100,11 +100,10 @@ class Encoder {
         // return this;
     // }
 
-    public function appendDocument(key, val:Bytes):Encoder
+    public function appendEmbedded(key, val:Encoder):Encoder
     {
         writeHeader(key, 0x03);
-        out.writeInt32(val.length + 4);
-        out.writeBytes(val, 0, val.length);
+        out.write(val.getBytes());
         return this;
     }
 
@@ -119,13 +118,17 @@ class Encoder {
 
     public function getBytes():Bytes
     {
-        return out.getBytes();
+        out.writeByte(0);
+        var res = out.getBytes();
+        res.set(0, res.length);
+        return res;
     }
 
     public function new()
     {
         out = new BytesOutput();
         out.bigEndian = false;
+        out.writeInt32(0);  // set later
     }
 }
 
