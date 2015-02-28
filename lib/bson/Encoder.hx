@@ -2,21 +2,31 @@ package bson;
 
 import haxe.Int64;
 import haxe.io.*;
+import haxe.Utf8;
 using bson.DateTools;
 
 class Encoder {
     var out:BytesOutput;
 
-    // TODO validation: Utf8, but no \x00
+    // TODO always validate
     function writeCString(cstring:String)
     {
+#if debug
+        if (!Utf8.validate(cstring))
+            throw "Expected a UTF-8 encoded String without NULLs";
+        Utf8.iter(cstring, function (c) if (c == 0) throw "Expected a UTF-8 encoded String without NULLs");
+#end
         out.writeString(cstring);
         out.writeByte(0x00);
     }
 
-    // TODO validation: Utf8
+    // TODO always validate
     function writeString(str:String):Void
     {
+#if debug
+        if (!Utf8.validate(str))
+            throw "Expected a UTF-8 encoded String";
+#end
         var bytes = Bytes.ofString(str);
         out.writeInt32(bytes.length + 1);
         out.writeBytes(bytes, 0, bytes.length);
