@@ -23,7 +23,7 @@ class ObjectId {
 
     public function toString()
     {
-        return 'ObjectId(${valueOf()})';
+        return 'ObjectId("${valueOf()}")';
     }
 
     public function valueOf()
