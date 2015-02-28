@@ -1,5 +1,6 @@
 import bson.Encoder;
 import haxe.io.Bytes;
+import mongodb.ObjectId;
 import utest.Assert;
 using StringTools;
 
@@ -85,7 +86,19 @@ class TestEncoding {
         // document
         Assert.equals("0300" + "05".rpad("0", 10), show(e().appendEmbedded("", new Encoder())));
 
+        // ObjectId
+        Assert.equals("0700" + "9bc420000100000200030000", show(e().appendObjectId("", new ObjectId(0x20c49b, 1, 2, 3))));
+
         // TODO 04 05 07 0b 0d 0f 11 ff 7f
+    }
+
+    public function test91_ObjectIdMethods()
+    {
+        var id = new ObjectId(0x20c49b, 0x9111111, 0x82222, 0x7333333);
+        Assert.equals(Date.fromTime(1e3*0x20c49b).toString(), id.getDate().toString());
+        Assert.equals(0x111111, id.machineId);  // limited to 3 bytes
+        Assert.equals(0x2222, id.processId);  // limited to 2 bytes
+        Assert.equals(0x333333, id.counter);  // limited to 3 bytes
     }
 
     public function new() {}

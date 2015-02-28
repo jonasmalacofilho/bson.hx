@@ -1,8 +1,9 @@
 package bson;
 
 import haxe.Int64;
-import haxe.io.*;
 import haxe.Utf8;
+import haxe.io.*;
+import mongodb.ObjectId;
 using bson.DateTools;
 
 class Encoder {
@@ -103,12 +104,12 @@ class Encoder {
         // return this;
     // }
 
-    // public function appendObjectId(key, val:ObjectId):Encoder
-    // {
-    //     writeHeader(key, 0x07);
-    //     out.writeBytes(val.bytes, 0, 12);
-        // return this;
-    // }
+    public function appendObjectId(key, val:ObjectId):Encoder
+    {
+        writeHeader(key, 0x07);
+        val.writeBytes(out);
+        return this;
+    }
 
     public function appendEmbedded(key, val:Encoder):Encoder
     {
