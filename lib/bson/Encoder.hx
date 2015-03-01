@@ -154,31 +154,39 @@ class Encoder {
                 t = of;
             case TMono(_.get() => null) if (val.expr.match(EConst(CIdent("null")))):  // null literal
                 return macro $ethis.appendNull($key);
-            case TAbstract(_.get() => { module : "StdTypes", name : "Bool" }, []):  // Bool
-                return macro $ethis.appendBool($key, $val);
-            case TInst(_.get() => { module : "String", name : "String" }, []):  // String
-                return macro $ethis.appendString($key, $val);
-            case TAbstract(_.get() => { module : "StdTypes", name : "Float" }, []):  // Float
-                return macro $ethis.appendFloat($key, $val);
-            case TAbstract(_.get() => { module : "StdTypes", name : "Int" }, []):  // Int
-                return macro $ethis.appendInt($key, $val);
-            case TAbstract(_.get() => { module : "haxe.Int64", name : "Int64" }, []):  // Int64 FIXME haxe_ver < 3.2
-                return macro $ethis.appendInt64($key, $val);
-            case TInst(_.get() => { module : "Date", name : "Date" }, []):  // Date
-                return macro $ethis.appendDate($key, $val);
+            case TAbstract(_.get() => x, params):
+                switch [x, params] {
+                case [{ module : "StdTypes", name : "Bool" }, []]:  // Bool
+                    return macro $ethis.appendBool($key, $val);
+                case [{ module : "StdTypes", name : "Float" }, []]: // Float
+                    return macro $ethis.appendFloat($key, $val);
+                case [{ module : "StdTypes", name : "Int" }, []]: // Int
+                    return macro $ethis.appendInt($key, $val);
+                case [{ module : "haxe.Int64", name : "Int64" }, []]: // Int64
+                    return macro $ethis.appendInt64($key, $val);
+                case _: break;
+                }
+            case TInst(_.get() => x, params):
+                switch [x, params] {
+                case [{ module : "String", name : "String" }, []]:  // String
+                    return macro $ethis.appendString($key, $val);
+                case [{ module : "Date", name : "Date" }, []]:  // Date
+                    return macro $ethis.appendDate($key, $val);
+                case [{ module : "mongodb.ObjectId", name : "ObjectId" }, []]:  // ObjectId
+                    return macro $ethis.appendObjectId($key, $val);
+                case _: break;
+                }
             // TODO embedded
-            case TInst(_.get() => { module : "mongodb.ObjectId", name : "ObjectId" }, []):  // ObjectId
-                return macro $ethis.appendObjectId($key, $val);
             // TODO bytes
             case TAbstract(_.get() => x, []):
                 trace(x.pack);
                 trace(x.module);
                 trace(x.name);
                 return ethis;
-            case all:
-                throw 'Macro append<V>() not implemented for type $t (expr: ${val.toString()})';
+            case _: break;
             }
         }
+        throw 'Macro append() not implemented for type $t (expr: ${val.toString()})';
     }
 
     public function getBytes():Bytes
