@@ -6,6 +6,11 @@ import haxe.io.*;
 import mongodb.ObjectId;
 using bson.DateTools;
 
+import haxe.macro.Expr;
+import haxe.macro.Context.*;
+import haxe.macro.Type;
+using haxe.macro.ExprTools;
+
 class Encoder {
     var out:BytesOutput;
 
@@ -52,74 +57,83 @@ class Encoder {
         return this;
     }
 
-    public function appendBool(key, val:Bool):Encoder
+    public function appendBool(key, val:Null<Bool>):Encoder
     {
+        if (val == null)
+            return appendNull(key);
         writeHeader(key, 0x08);
         out.writeByte(val ? 0x01 : 0x00);
         return this;
     }
 
-    public function appendString(key, val:String):Encoder
+    public function appendString(key, val:Null<String>):Encoder
     {
+        if (val == null)
+            return appendNull(key);
         writeHeader(key, 0x02);
         writeString(val);
         return this;
     }
 
-    public function appendFloat(key, val:Float):Encoder
+    public function appendFloat(key, val:Null<Float>):Encoder
     {
+        if (val == null)
+            return appendNull(key);
         writeHeader(key, 0x01);
         out.writeDouble(val);
         return this;
     }
 
-    public function appendInt(key, val:Int):Encoder
+    public function appendInt(key, val:Null<Int>):Encoder
     {
+        if (val == null)
+            return appendNull(key);
         writeHeader(key, 0x10);
         out.writeInt32(val);
         return this;
     }
 
-    public function appendInt64(key, val:Int64):Encoder
+    public function appendInt64(key, val:Null<Int64>):Encoder
     {
+        if (val == null)
+            return appendNull(key);
         writeHeader(key, 0x12);
         writeInt64(val);
         return this;
     }
 
-    public function appendDate(key, val:Date):Encoder
+    public function appendDate(key, val:Null<Date>):Encoder
     {
+        if (val == null)
+            return appendNull(key);
         writeHeader(key, 0x09);
         var d64 = val.getInt64Time();
         writeInt64(d64);
         return this;
     }
 
-    // public function appendArray<T>(key, val:Array<T>):Encoder
-    // {
-    //     writeHeader(key, 0x04);
-    //     var bytes = arrayToBytes(val);
-    //     out.writeInt32(bytes.length + 4);
-    //     out.writeBytes(bytes, 0, bytes.length);
-        // return this;
-    // }
-
-    public function appendObjectId(key, val:ObjectId):Encoder
+    public function appendObjectId(key, val:Null<ObjectId>):Encoder
     {
+        if (val == null)
+            return appendNull(key);
         writeHeader(key, 0x07);
         val.writeBytes(out);
         return this;
     }
 
-    public function appendEmbedded(key, val:Encoder):Encoder
+    public function appendEmbedded(key, val:Null<Encoder>):Encoder
     {
+        if (val == null)
+            return appendNull(key);
         writeHeader(key, 0x03);
         out.write(val.getBytes());
         return this;
     }
 
-    public function appendBytes(key, val:Bytes):Encoder
+    public function appendBytes(key, val:Null<Bytes>):Encoder
     {
+        if (val == null)
+            return appendNull(key);
         writeHeader(key, 0x05);
         out.writeInt32(val.length);
         out.writeByte(0x00);  // generic binary subtype
@@ -127,14 +141,45 @@ class Encoder {
         return this;
     }
 
-    // public function writeDynamic(key, val:Dynamic)
-    // {
-    //     writeHeader(key, 0x03);
-    //     var bytes = objectToBytes(val);
-    //     out.writeInt32(bytes.length + 4);
-    //     out.writeBytes(bytes, 0, bytes.length);
-        // return this;
-    // }
+    // TODO appendArray
+
+    // TODO appendObject & appendDynamic
+
+    public macro function append(ethis:Expr, key:ExprOf<String>, val:Expr):Expr
+    {
+        var t = typeof(val);
+        while (true) {
+            switch (t) {
+            case TType(_.get() => { module : "StdTypes", name : "Null" }, [of]):  // Null<T>
+                t = of;
+            case TMono(_.get() => null) if (val.expr.match(EConst(CIdent("null")))):  // null literal
+                return macro $ethis.appendNull($key);
+            case TAbstract(_.get() => { module : "StdTypes", name : "Bool" }, []):  // Bool
+                return macro $ethis.appendBool($key, $val);
+            case TInst(_.get() => { module : "String", name : "String" }, []):  // String
+                return macro $ethis.appendString($key, $val);
+            case TAbstract(_.get() => { module : "StdTypes", name : "Float" }, []):  // Float
+                return macro $ethis.appendFloat($key, $val);
+            case TAbstract(_.get() => { module : "StdTypes", name : "Int" }, []):  // Int
+                return macro $ethis.appendInt($key, $val);
+            case TAbstract(_.get() => { module : "haxe.Int64", name : "Int64" }, []):  // Int64 FIXME haxe_ver < 3.2
+                return macro $ethis.appendInt64($key, $val);
+            case TInst(_.get() => { module : "Date", name : "Date" }, []):  // Date
+                return macro $ethis.appendDate($key, $val);
+            // TODO embedded
+            case TInst(_.get() => { module : "mongodb.ObjectId", name : "ObjectId" }, []):  // ObjectId
+                return macro $ethis.appendObjectId($key, $val);
+            // TODO bytes
+            case TAbstract(_.get() => x, []):
+                trace(x.pack);
+                trace(x.module);
+                trace(x.name);
+                return ethis;
+            case all:
+                throw 'Macro append<V>() not implemented for type $t (expr: ${val.toString()})';
+            }
+        }
+    }
 
     public function getBytes():Bytes
     {
