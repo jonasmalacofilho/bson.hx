@@ -41,8 +41,13 @@ class Encoder {
 
     function writeInt64(val:Int64)
     {
+#if (haxe_ver >= 3.2)
+        out.writeInt32(val.low);
+        out.writeInt32(val.high);
+#else
         out.writeInt32(Int64.getLow(val));
         out.writeInt32(Int64.getHigh(val));
+#end
     }
 
     function writeHeader(key:String, type:Int):Void

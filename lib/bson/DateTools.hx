@@ -19,7 +19,11 @@ class DateTools {
     {
         // double = high << 32 + low
         //    with  a << b = a*(1 << b)
+#if (haxe_ver >= 3.2)
+        return Date.fromTime(POW32f*ms.high + unsigned((ms.low:Int)));
+#else
         return Date.fromTime(POW32f*ms.getHigh() + unsigned((ms.getLow():Int)));
+#end
     }
 
     public static function getInt64Time(date:Date):Int64
