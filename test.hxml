@@ -1,5 +1,5 @@
--js .js/TestAll.js
-# --interp
+--interp
+# -js .js/TestAll.js
 -main TestAll
 -cp test
 -cp lib
