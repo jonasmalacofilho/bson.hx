@@ -139,7 +139,37 @@ class Encoder {
 
     // TODO appendArray
 
-    // TODO appendObject & appendDynamic
+    // TODO appendObject
+
+    public function appendDynamic(key:String, val:Dynamic):Encoder
+    {
+        if (val == null)
+            return appendNull(key);
+        var t = std.Type.typeof(val);
+        switch (t) {
+        case TBool:
+            return appendBool(key, val);
+        case TClass(c):
+            switch (std.Type.getClassName(c)) {
+            case "String":
+                return appendString(key, val);
+            case "haxe.Int64", "haxe._Int64.___Int64":
+                return appendInt64(key, val);
+            case "Date":
+                return appendDate(key, val);
+            case "mongodb.ObjectId":
+                return appendObjectId(key, val);
+            case name:
+                trace(name);
+            }
+        case TFloat:
+            return appendFloat(key, val);
+        case TInt:
+            return appendInt(key, val);
+        case _:
+        }
+        throw 'Encoder.appendDynamic not implemented for type $t (val: $val)';
+    }
 
     public macro function append(ethis:Expr, key:ExprOf<String>, val:Expr):Expr
     {
@@ -184,7 +214,11 @@ class Encoder {
             case _: break;
             }
         }
-        throw 'Macro append() not implemented for type $t (expr: ${val.toString()})';
+        // currently an unsupported type causes an error, but
+        // we are already set up to warn only and use appendDynamic
+        error('Encoder.append() macro not implemented for type $t (expr: ${val.toString()})', currentPos());
+        warning('Using Encoder.appendDynamic instead.', currentPos());
+        return macro $ethis.appendDynamic($key, $val);
     }
 
     public function getBytes():Bytes
