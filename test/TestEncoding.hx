@@ -72,7 +72,8 @@ class TestEncoding {
         Assert.equals("0a00", show(e().appendString("", (null : Null<String>))));
 
         // float
-        Assert.equals("0100" + "".rpad("0", 16), show(e().appendFloat("", 0)));  // TODO improve
+        Assert.equals("0100" + "".rpad("0", 16), show(e().appendFloat("", 0)));
+        Assert.equals("0100" + "1f85eb51b81e0940", show(e().appendFloat("", 3.14)));
         Assert.equals("0a00", show(e().appendFloat("", (null : Null<Float>))));
 
         // int
@@ -116,12 +117,9 @@ class TestEncoding {
         Assert.equals("0a00", show(e().appendDynamic("", null)));
         Assert.equals("080000", show(e().appendDynamic("", false)));
         Assert.equals('02000100000000', show(e().appendDynamic("", "")));
-        Assert.equals("0100" + "".rpad("0", 16), show(e().appendDynamic("", 0.)));
+        Assert.equals("0100" + "1f85eb51b81e0940", show(e().appendDynamic("", 3.14)));
         Assert.equals("1000" + "".rpad("0", 8), show(e().appendDynamic("", 0)));
         Assert.equals("1200" + "".rpad("0", 16), show(e().appendDynamic("", Int64.ofInt(0))));
-#if (haxe_ver >= 3.2)
-        Assert.equals("1200" + "".rpad("0", 16), show(e().appendDynamic("", (0 : Int64))));
-#end
         Assert.equals("0900" + "78fdff7f".rpad("0", 16), show(e().appendDynamic("", Date.fromTime(0x7ffffd78))));
         Assert.equals("0700" + "9bc420000100000200030000", show(e().appendDynamic("", new ObjectId(0x20c49b, 1, 2, 3))));
         // Assert.equals("0500" + "03000000" + "00" + HEX_KEY, show(e().appendDynamic("", Bytes.ofString("key"))));

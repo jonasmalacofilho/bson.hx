@@ -153,7 +153,7 @@ class Encoder {
             switch (std.Type.getClassName(c)) {
             case "String":
                 return appendString(key, val);
-            case "haxe.Int64", "haxe._Int64.___Int64":
+            case "haxe._Int64.___Int64", "haxe.Int64", "System.Int64":  // 3.2, 3.1.3, C#
                 return appendInt64(key, val);
             case "Date":
                 return appendDate(key, val);
