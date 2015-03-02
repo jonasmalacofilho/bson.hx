@@ -166,6 +166,8 @@ class Encoder {
                 switch [x, params] {
                 case [{ module : "String", name : "String" }, []]:  // String
                     return macro $ethis.appendString($key, $val);
+                case [{ module : "haxe.Int64", name : "Int64" }, []]:  // Int64 if haxe_ver < 3.2
+                    return macro $ethis.appendInt64($key, $val);
                 case [{ module : "Date", name : "Date" }, []]:  // Date
                     return macro $ethis.appendDate($key, $val);
                 case [{ module : "mongodb.ObjectId", name : "ObjectId" }, []]:  // ObjectId

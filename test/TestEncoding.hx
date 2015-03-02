@@ -82,9 +82,15 @@ class TestEncoding {
         Assert.equals("0a00", show(e().appendInt("", (null : Null<Int>))));
 
         // int64
+#if (haxe_ver >= 3.2)
         Assert.equals("1200" + "".rpad("0", 16), show(e().appendInt64("", 0)));
         Assert.equals("1200" + "04".rpad("0", 16), show(e().appendInt64("", 4)));
         Assert.equals("1200" + "".rpad("f", 16), show(e().appendInt64("", -1)));
+#else
+        Assert.equals("1200" + "".rpad("0", 16), show(e().appendInt64("", Int64.fromInt(0))));
+        Assert.equals("1200" + "04".rpad("0", 16), show(e().appendInt64("", Int64.fromInt(4))));
+        Assert.equals("1200" + "".rpad("f", 16), show(e().appendInt64("", Int64.fromInt(-1))));
+#end
         Assert.equals("0a00", show(e().appendInt64("", (null : Null<Int64>))));
 
         // date
@@ -118,7 +124,11 @@ class TestEncoding {
         Assert.equals('02000100000000', show(e().append("", "")));
         Assert.equals("0100" + "".rpad("0", 16), show(e().append("", 0.)));
         Assert.equals("1000" + "".rpad("0", 8), show(e().append("", 0)));
-        Assert.equals("1200" + "".rpad("0", 16), show(e().append("", (0 : Int64))));  // FIXME haxe_ver < 3.2
+#if (haxe_ver >= 3.2)
+        Assert.equals("1200" + "".rpad("0", 16), show(e().append("", (0 : Int64))));
+#else
+        Assert.equals("1200" + "".rpad("0", 16), show(e().append("", Int64.fromInt(0))));
+#end
         Assert.equals("0900" + "78fdff7f".rpad("0", 16), show(e().append("", Date.fromTime(0x7ffffd78))));
         Assert.equals("0700" + "9bc420000100000200030000", show(e().append("", new ObjectId(0x20c49b, 1, 2, 3))));
         // Assert.equals("0500" + "03000000" + "00" + HEX_KEY, show(e().append("", Bytes.ofString("key"))));
