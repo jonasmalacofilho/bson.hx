@@ -91,10 +91,6 @@ class TestEncoding {
         Assert.equals("0900" + "78fdff7f".rpad("0", 16), show(e().appendDate("", Date.fromTime(0x7ffffd78))));
         Assert.equals("0a00", show(e().appendDate("", (null : Null<Date>))));
 
-        // document
-        Assert.equals("0300" + "05".rpad("0", 10), show(e().appendEmbedded("", new Encoder())));
-        Assert.equals("0a00", show(e().appendEmbedded("", (null : Null<Encoder>))));
-
         // ObjectId
         Assert.equals("0700" + "9bc420000100000200030000", show(e().appendObjectId("", new ObjectId(0x20c49b, 1, 2, 3))));
         Assert.equals("0a00", show(e().appendObjectId("", (null : Null<ObjectId>))));
@@ -103,7 +99,7 @@ class TestEncoding {
         Assert.equals("0500" + "03000000" + "00" + HEX_KEY, show(e().appendBytes("", Bytes.ofString("key"))));
         Assert.equals("0a00", show(e().appendBytes("", (null : Null<Bytes>))));
 
-        // TODO 04 0b 0d 0f 11 ff 7f
+        // TODO 03 04 0b 0d 0f 11 ff 7f
     }
 
     public function test04_macroAppend()
@@ -124,7 +120,6 @@ class TestEncoding {
         Assert.equals("1000" + "".rpad("0", 8), show(e().append("", 0)));
         Assert.equals("1200" + "".rpad("0", 16), show(e().append("", (0 : Int64))));  // FIXME haxe_ver < 3.2
         Assert.equals("0900" + "78fdff7f".rpad("0", 16), show(e().append("", Date.fromTime(0x7ffffd78))));
-        // TODO embedded
         Assert.equals("0700" + "9bc420000100000200030000", show(e().append("", new ObjectId(0x20c49b, 1, 2, 3))));
         // Assert.equals("0500" + "03000000" + "00" + HEX_KEY, show(e().append("", Bytes.ofString("key"))));
 

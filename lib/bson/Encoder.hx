@@ -126,15 +126,6 @@ class Encoder {
         return this;
     }
 
-    public function appendEmbedded(key, val:Null<Encoder>):Encoder
-    {
-        if (val == null)
-            return appendNull(key);
-        writeHeader(key, 0x03);
-        out.write(val.getBytes());
-        return this;
-    }
-
     public function appendBytes(key, val:Null<Bytes>):Encoder
     {
         if (val == null)
