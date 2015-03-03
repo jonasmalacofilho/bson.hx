@@ -6,10 +6,11 @@ import haxe.io.*;
 import mongodb.ObjectId;
 using bson.DateTools;
 
-import haxe.macro.Expr;
 import haxe.macro.Context.*;
+import haxe.macro.Expr;
 import haxe.macro.Type;
 using haxe.macro.ExprTools;
+using haxe.macro.TypeTools;
 
 class Encoder {
     var out:BytesOutput;
@@ -137,10 +138,6 @@ class Encoder {
         return this;
     }
 
-    // TODO appendArray
-
-    // TODO appendObject
-
     public function appendDynamic(key:String, val:Dynamic):Encoder
     {
         if (val == null)
@@ -171,47 +168,75 @@ class Encoder {
         throw 'Encoder.appendDynamic not implemented for type $t (val: $val)';
     }
 
+#if macro
+    static function _freeName(base:String):String
+    {
+        var locals = getLocalVars();
+        var i = "";
+        while (locals.exists(base + i))
+            base += Std.parseInt(i) + 1;
+        trace(base);
+       return base;
+    }
+#end
+
     public macro function append(ethis:Expr, key:ExprOf<String>, val:Expr):Expr
     {
         var t = typeof(val);
         while (true) {
             switch (t) {
-            case TType(_.get() => { module : "StdTypes", name : "Null" }, [of]):  // Null<T>
-                t = of;
-            case TMono(_.get() => null) if (val.expr.match(EConst(CIdent("null")))):  // null literal
-                return macro $ethis.appendNull($key);
-            case TAbstract(_.get() => x, params):
-                switch [x, params] {
-                case [{ module : "StdTypes", name : "Bool" }, []]:  // Bool
-                    return macro $ethis.appendBool($key, $val);
-                case [{ module : "StdTypes", name : "Float" }, []]: // Float
-                    return macro $ethis.appendFloat($key, $val);
-                case [{ module : "StdTypes", name : "Int" }, []]: // Int
-                    return macro $ethis.appendInt($key, $val);
-                case [{ module : "haxe.Int64", name : "Int64" }, []]: // Int64
+             case TType(_.get() => { module : "StdTypes", name : "Null" }, [of]):  // Null<T>
+                 t = of;
+             case TMono(_.get() => null) if (val.expr.match(EConst(CIdent("null")))):  // null literal
+                 return macro $ethis.appendNull($key);
+             case TAbstract(_.get() => x, params):
+                 switch [x, params] {
+                 case [{ module : "StdTypes", name : "Bool" }, []]:  // Bool
+                     return macro $ethis.appendBool($key, $val);
+                 case [{ module : "StdTypes", name : "Float" }, []]: // Float
+                     return macro $ethis.appendFloat($key, $val);
+                 case [{ module : "StdTypes", name : "Int" }, []]: // Int
+                     return macro $ethis.appendInt($key, $val);
+                 case [{ module : "haxe.Int64", name : "Int64" }, []]: // Int64
                     return macro $ethis.appendInt64($key, $val);
-                case _: break;
+                case _:
+                    break;
                 }
             case TInst(_.get() => x, params):
                 switch [x, params] {
-                case [{ module : "String", name : "String" }, []]:  // String
+                case [{ module : "String", name : "String" }, []]:  // string
                     return macro $ethis.appendString($key, $val);
-                case [{ module : "haxe.Int64", name : "Int64" }, []]:  // Int64 if haxe_ver < 3.2
+                case [{ module : "haxe.Int64", name : "Int64" }, []]:  // int64 if haxe_ver < 3.2
                     return macro $ethis.appendInt64($key, $val);
-                case [{ module : "Date", name : "Date" }, []]:  // Date
+                case [{ module : "Date", name : "Date" }, []]:  // date
                     return macro $ethis.appendDate($key, $val);
-                case [{ module : "mongodb.ObjectId", name : "ObjectId" }, []]:  // ObjectId
+                case [{ module : "mongodb.ObjectId", name : "ObjectId" }, []]:  // objectId
                     return macro $ethis.appendObjectId($key, $val);
-                case _: break;
+                case _:
+                    break;
                 }
-            // TODO embedded
-            // TODO bytes
-            case TAbstract(_.get() => x, []):
-                trace(x.pack);
-                trace(x.module);
-                trace(x.name);
-                return ethis;
-            case _: break;
+            case TMono(_.get() => null) if (val.expr.match(EConst(CIdent("null")))):  // null literal
+                return macro $ethis.appendNull($key);
+            case TAnonymous(_.get() => anon):  // struct literal
+                switch (val.expr) {
+                case EObjectDecl(fields):
+                    var enc = _freeName("__encoder__");
+                    trace(enc);
+                    var b = [];
+                    b.push(macro var $enc = $ethis);
+                    // FIXME header
+                    for (f in fields) {
+                        // FIXME ignore functions!
+                        b.push(macro $i{enc}.append($v{f.field}, ${f.expr}));
+                    }
+                    // FIXME terminator
+                    b.push(macro $i{enc});
+                    return { expr : EBlock(b), pos : currentPos() };
+                case _:
+                    break;
+                }
+            case _:
+                break;
             }
         }
         // currently an unsupported type causes an error, but
@@ -220,6 +245,13 @@ class Encoder {
         warning('Using Encoder.appendDynamic instead.', currentPos());
         return macro $ethis.appendDynamic($key, $val);
     }
+
+    // public macro function appendObject<T:{}>(ethis:Expr, key:ExprOf<String>, val:ExprOf<T>):Expr
+    // {
+    //     return macro $ethis.append($key, $val);
+    // }
+
+    // TODO appendArray
 
     public function getBytes():Bytes
     {

@@ -127,6 +127,14 @@ class TestEncoding {
         Assert.equals("0a00", e().append("", (null : Null<Bool>)).toHex());
     }
 
+    public function test41_objectAppend()
+    {
+        // struct literal
+        // Assert.equals("0300" + "0500000000", e().append("", {}).toHex());
+        // Assert.equals("0300" + "0500000000a06b657900", e().append("", { key : null }).toHex());
+        // Assert.equals("0300" + "0500000000806b65790000", e().append("", { key : false }).toHex());
+    }
+
     public function test91_objectIdMethods()
     {
         var id = new ObjectId(0x20c49b, 0x9111111, 0x82222, 0x7333333);
