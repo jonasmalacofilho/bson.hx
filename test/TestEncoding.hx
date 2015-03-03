@@ -119,7 +119,9 @@ class TestEncoding {
         Assert.equals('02000100000000', show(e().appendDynamic("", "")));
         Assert.equals("0100" + "1f85eb51b81e0940", show(e().appendDynamic("", 3.14)));
         Assert.equals("1000" + "".rpad("0", 8), show(e().appendDynamic("", 0)));
+#if !java  // Type.typeof(x), x:Int64, returns TInt or TFloat on java
         Assert.equals("1200" + "".rpad("0", 16), show(e().appendDynamic("", Int64.ofInt(0))));
+#end
         Assert.equals("0900" + "78fdff7f".rpad("0", 16), show(e().appendDynamic("", Date.fromTime(0x7ffffd78))));
         Assert.equals("0700" + "9bc420000100000200030000", show(e().appendDynamic("", new ObjectId(0x20c49b, 1, 2, 3))));
         // Assert.equals("0500" + "03000000" + "00" + HEX_KEY, show(e().appendDynamic("", Bytes.ofString("key"))));
