@@ -138,12 +138,23 @@ class Encoder {
         return this;
     }
 
+    public function appendSub(key, val:Null<Encoder>):Encoder
+    {
+        if (val == null)
+            return appendNull(key);
+        writeHeader(key, 0x03);
+        out.write(val.getBytes());
+        return this;
+    }
+
     public function appendDynamic(key:String, val:Dynamic):Encoder
     {
         if (val == null)
             return appendNull(key);
         var t = std.Type.typeof(val);
         switch (t) {
+        case TNull:
+            return appendNull(key);
         case TBool:
             return appendBool(key, val);
         case TClass(c):
@@ -157,15 +168,25 @@ class Encoder {
             case "mongodb.ObjectId":
                 return appendObjectId(key, val);
             case name:
-                trace(name);
+                throw name;
+                return this;
             }
         case TFloat:
             return appendFloat(key, val);
         case TInt:
             return appendInt(key, val);
-        case _:
+        case TObject:
+            var sub = new Encoder();
+            for (f in Reflect.fields(val)) {
+                var fval = Reflect.field(val, f);
+                if (!std.Type.typeof(fval).match(TUnknown | TFunction | TEnum(_)))
+                    sub.appendDynamic(f, fval);
+            }
+            return appendSub(key, sub);
+        case TUnknown, TFunction, TEnum(_):
+            throw 'Encoder.appendDynamic not implemented for type $t (val: $val)';
+            return this;
         }
-        throw 'Encoder.appendDynamic not implemented for type $t (val: $val)';
     }
 
 #if macro
@@ -220,29 +241,26 @@ class Encoder {
             case TAnonymous(_.get() => anon):  // struct literal
                 switch (val.expr) {
                 case EObjectDecl(fields):
-                    var enc = _freeName("__encoder__");
-                    trace(enc);
+                    var sub = _freeName("__subencoder__");
                     var b = [];
-                    b.push(macro var $enc = $ethis);
-                    // FIXME header
+                    b.push(macro var $sub = new bson.Encoder());
                     for (f in fields) {
-                        // FIXME ignore functions!
-                        b.push(macro $i{enc}.append($v{f.field}, ${f.expr}));
+                        // FIXME ignore unsupported types
+                        // shouldn't be necessary if append didn't fallback to appendDynamic
+                        b.push(macro $i{sub}.append($v{f.field}, ${f.expr}));
                     }
-                    // FIXME terminator
-                    b.push(macro $i{enc});
+                    b.push(macro $ethis.appendSub($key, $i{sub}));
                     return { expr : EBlock(b), pos : currentPos() };
                 case _:
                     break;
                 }
+            case TFun(_, _), TEnum(_, _):
+                error('Cant use macro append for type $t (expr: ${val.toString()})', currentPos());
             case _:
                 break;
             }
         }
-        // currently an unsupported type causes an error, but
-        // we are already set up to warn only and use appendDynamic
-        error('Encoder.append() macro not implemented for type $t (expr: ${val.toString()})', currentPos());
-        warning('Using Encoder.appendDynamic instead.', currentPos());
+        warning('Falling back to appendDynamic for type $t (expr: ${val.toString()})', currentPos());
         return macro $ethis.appendDynamic($key, $val);
     }
 
