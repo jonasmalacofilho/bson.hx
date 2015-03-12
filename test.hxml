@@ -5,4 +5,5 @@
 -cp lib
 -lib utest
 -debug
+-D dump=pretty
 
