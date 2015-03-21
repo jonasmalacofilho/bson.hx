@@ -105,10 +105,9 @@ class TestEncoding {
 #end
         Assert.equals("0900" + "78fdff7f00000000", e().appendDynamic("", Date.fromTime(0x7ffffd78)).toHex());
         Assert.equals("0700" + "9bc42000" + "010000" + "0200" + "030000", e().appendDynamic("", new ObjectId(0x20c49b, 1, 2, 3)).toHex());
-        // Assert.equals("0500" + "03000000" + "00" + "6b6579", e().appendDynamic("", Bytes.ofString("key")).toHex());
-
-        Assert.equals("0a00", e().appendDynamic("", (null : Null<Bool>)).toHex());
+        Assert.equals("0500" + "03000000" + "00" + "6b6579", e().appendDynamic("", Bytes.ofString("key")).toHex());
     }
+
     public function test33_macroAppend()
     {
         Assert.equals("0a00", e().append("", null).toHex());
@@ -122,8 +121,8 @@ class TestEncoding {
 #end
         Assert.equals("0900" + "78fdff7f00000000", e().append("", Date.fromTime(0x7ffffd78)).toHex());
         Assert.equals("0700" + "9bc42000" + "010000" + "0200" + "030000", e().append("", new ObjectId(0x20c49b, 1, 2, 3)).toHex());
-        // Assert.equals("0500" + "03000000" + "00" + HEX_KEY, e().append("", Bytes.ofString("key")).toHex());
-
+        Assert.equals("0500" + "03000000" + "00" + "6b6579", e().append("", Bytes.ofString("key")).toHex());
+        // Null<T>
         Assert.equals("0a00", e().append("", (null : Null<Bool>)).toHex());
     }
 

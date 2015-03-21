@@ -167,6 +167,8 @@ class Encoder {
                 return appendDate(key, val);
             case "mongodb.ObjectId":
                 return appendObjectId(key, val);
+            case "haxe.io.Bytes":
+                return appendBytes(key, val);
             case name:
                 throw name;
                 return this;
@@ -233,6 +235,8 @@ class Encoder {
                     return macro $ethis.appendDate($key, $val);
                 case [{ module : "mongodb.ObjectId", name : "ObjectId" }, []]:  // objectId
                     return macro $ethis.appendObjectId($key, $val);
+                case [{ module : "haxe.io.Bytes", name : "Bytes" }, []]:
+                    return macro $ethis.appendBytes($key, $val);
                 case _:
                     break;
                 }
@@ -244,18 +248,26 @@ class Encoder {
                     var sub = _freeName("__subencoder__");
                     var b = [];
                     b.push(macro var $sub = new bson.Encoder());
-                    for (f in fields) {
-                        // FIXME ignore unsupported types
-                        // shouldn't be necessary if append didn't fallback to appendDynamic
+                    for (f in fields)
                         b.push(macro $i{sub}.append($v{f.field}, ${f.expr}));
-                    }
                     b.push(macro $ethis.appendSub($key, $i{sub}));
+                    return { expr : EBlock(b), pos : currentPos() };
+                case EBlock([]):
+                    var tmp = _freeName("__instance__");
+                    var b = [];
+                    b.push(macro var $tmp = $ethis);
+                    b.push(macro @:privateAccess $i{tmp}.writeHeader($key, 0x03));  // embedded object header
+                    b.push(macro @:privateAccess $i{tmp}.out.writeInt32(5));        // object length
+                    b.push(macro @:privateAccess $i{tmp}.out.writeByte(0x00));      // object terminator
+                    b.push(macro $i{tmp});
                     return { expr : EBlock(b), pos : currentPos() };
                 case _:
                     break;
                 }
-            case TFun(_, _), TEnum(_, _):
-                error('Cant use macro append for type $t (expr: ${val.toString()})', currentPos());
+            case TFun(_):
+                error('Cant yet use macro append for type $t (expr: ${val.toString()})', currentPos());
+            case TEnum(_), TType(_):
+                error('Cant encode value of type $t (expr: ${val.toString()})', currentPos());
             case _:
                 break;
             }
@@ -283,7 +295,7 @@ class Encoder {
     {
         out = new BytesOutput();
         out.bigEndian = false;
-        out.writeInt32(0);  // set later
+        out.writeInt32(0);  // set length later
     }
 }
 
