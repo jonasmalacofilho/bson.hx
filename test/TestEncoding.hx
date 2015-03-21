@@ -100,7 +100,7 @@ class TestEncoding {
         Assert.equals("0200" + "0100000000", e().appendDynamic("", "").toHex());
         Assert.equals("0100" + "1f85eb51b81e0940", e().appendDynamic("", 3.14).toHex());
         Assert.equals("1000" + "00000000", e().appendDynamic("", 0).toHex());
-        Assert.equals("1200" + "0000000000000000", e().appendDynamic("", Int64.ofInt(0)).toHex());
+        Assert.equals("1200" + "ffffffff01000000", e().appendDynamic("", Int64.make(0x01, 0xffffffff)).toHex());
         Assert.equals("0900" + "78fdff7f00000000", e().appendDynamic("", Date.fromTime(0x7ffffd78)).toHex());
         Assert.equals("0700" + "9bc42000" + "010000" + "0200" + "030000", e().appendDynamic("", new ObjectId(0x20c49b, 1, 2, 3)).toHex());
         Assert.equals("0500" + "03000000" + "00" + "6b6579", e().appendDynamic("", Bytes.ofString("key")).toHex());
