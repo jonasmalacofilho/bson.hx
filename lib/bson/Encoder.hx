@@ -170,7 +170,7 @@ class Encoder {
             case "haxe.io.Bytes":
                 return appendBytes(key, val);
             case name:
-                throw name;
+                throw 'appendDynamic can\'t handle TClass($name)';  // FIXME
                 return this;
             }
         case TFloat:
@@ -195,11 +195,9 @@ class Encoder {
     static function _freeName(base:String):String
     {
         var locals = getLocalVars();
-        var i = "";
-        while (locals.exists(base + i))
-            base += Std.parseInt(i) + 1;
-        trace(base);
-       return base;
+        while (locals.exists(base))
+            base += "i";
+        return base;
     }
 #end
 

@@ -128,10 +128,20 @@ class TestEncoding {
 
     public function test41_objectAppend()
     {
-        // struct literal
+        // struct literals
         Assert.equals("0300" + "0500000000", e().append("", {}).toHex());
+        Assert.equals("0300" + "0500000000", e().appendDynamic("", {}).toHex());
         Assert.equals("0300" + "0a0000000a6b65790000", e().append("", { key : null }).toHex());
-        Assert.equals("0300" + "0b000000086b6579000000", e().append("", { key : false }).toHex());
+        Assert.equals("0300" + "0a0000000a6b65790000", e().appendDynamic("", { key : null }).toHex());
+        Assert.equals("0300" + "0b000000086b6579000100", e().append("", { key : true }).toHex());
+        Assert.equals("0300" + "0b000000086b6579000100", e().appendDynamic("", { key : true }).toHex());
+
+        // deep
+        // TODO recheck that the expected value is correct
+        Assert.equals("030022000000036b6579300017000000036b657931000c000000086b6579320001000000",
+                e().append("", { key0 : { key1 : { key2 : true } } }).toHex());
+        Assert.equals("030022000000036b6579300017000000036b657931000c000000086b6579320001000000",
+                e().appendDynamic("", { key0 : { key1 : { key2 : true } } }).toHex());
     }
 
     public function test91_objectIdMethods()
@@ -141,6 +151,13 @@ class TestEncoding {
         Assert.equals(0x111111, id.machineId);  // limited to 3 bytes
         Assert.equals(0x2222, id.processId);  // limited to 2 bytes
         Assert.equals(0x333333, id.counter);  // limited to 3 bytes
+    }
+
+    public function test99_other()
+    {
+        // make sure that special vars don't shadow local ones
+        var __subencoder__ = true;
+        Assert.equals("0300" + "0b000000086b6579000100", e().append("", { key : __subencoder__ }).toHex());
     }
 
     public function new() {}

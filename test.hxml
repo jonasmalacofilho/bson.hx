@@ -1,9 +1,8 @@
 --interp
-# -js .js/TestAll.js
 -main TestAll
 -cp test
 -cp lib
 -lib utest
 -debug
--D dump=pretty
+-D dump
 
