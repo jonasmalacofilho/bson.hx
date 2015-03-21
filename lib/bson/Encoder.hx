@@ -170,6 +170,11 @@ class Encoder {
             case "haxe.io.Bytes":
                 return appendBytes(key, val);
             case name:
+#if (haxe_ver >= 3.2)
+                if (Int64.is(val)) {
+                    return appendInt64(key, val);
+                }
+#end
                 throw 'appendDynamic can\'t handle TClass($name)';  // FIXME
                 return this;
             }
