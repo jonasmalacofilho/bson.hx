@@ -152,6 +152,12 @@ class Encoder {
         if (val == null)
             return appendNull(key);
         var t = std.Type.typeof(val);
+
+#if (haxe_ver >= 3.2)
+        if (Int64.is(val))
+            return appendInt64(key, val);
+#end
+
         switch (t) {
         case TNull:
             return appendNull(key);
@@ -182,11 +188,6 @@ class Encoder {
             case "haxe.io.Bytes":
                 return appendBytes(key, val);
             case name:
-#if (haxe_ver >= 3.2)
-                if (Int64.is(val)) {
-                    return appendInt64(key, val);
-                }
-#end
                 throw 'appendDynamic can\'t handle TClass($name)';  // FIXME
                 return this;
             }
