@@ -157,6 +157,18 @@ class Encoder {
             return appendNull(key);
         case TBool:
             return appendBool(key, val);
+        case TFloat:
+            return appendFloat(key, val);
+        case TInt:
+            return appendInt(key, val);
+        case TObject:
+            var sub = new Encoder();
+            for (f in Reflect.fields(val)) {
+                var fval = Reflect.field(val, f);
+                if (!std.Type.typeof(fval).match(TUnknown | TFunction | TEnum(_)))
+                    sub.appendDynamic(f, fval);
+            }
+            return appendSub(key, sub);
         case TClass(c):
             switch (std.Type.getClassName(c)) {
             case "String":
@@ -178,18 +190,6 @@ class Encoder {
                 throw 'appendDynamic can\'t handle TClass($name)';  // FIXME
                 return this;
             }
-        case TFloat:
-            return appendFloat(key, val);
-        case TInt:
-            return appendInt(key, val);
-        case TObject:
-            var sub = new Encoder();
-            for (f in Reflect.fields(val)) {
-                var fval = Reflect.field(val, f);
-                if (!std.Type.typeof(fval).match(TUnknown | TFunction | TEnum(_)))
-                    sub.appendDynamic(f, fval);
-            }
-            return appendSub(key, sub);
         case TUnknown, TFunction, TEnum(_):
             throw 'Encoder.appendDynamic not implemented for type $t (val: $val)';
             return this;
@@ -228,21 +228,6 @@ class Encoder {
                 case _:
                     break;
                 }
-            case TInst(_.get() => x, params):
-                switch [x, params] {
-                case [{ module : "String", name : "String" }, []]:  // string
-                    return macro $ethis.appendString($key, $val);
-                case [{ module : "haxe.Int64", name : "Int64" }, []]:  // int64 if haxe_ver < 3.2
-                    return macro $ethis.appendInt64($key, $val);
-                case [{ module : "Date", name : "Date" }, []]:  // date
-                    return macro $ethis.appendDate($key, $val);
-                case [{ module : "mongodb.ObjectId", name : "ObjectId" }, []]:  // objectId
-                    return macro $ethis.appendObjectId($key, $val);
-                case [{ module : "haxe.io.Bytes", name : "Bytes" }, []]:
-                    return macro $ethis.appendBytes($key, $val);
-                case _:
-                    break;
-                }
             case TMono(_.get() => null) if (val.expr.match(EConst(CIdent("null")))):  // null literal
                 return macro $ethis.appendNull($key);
             case TAnonymous(_.get() => anon):  // struct literal
@@ -264,6 +249,21 @@ class Encoder {
                     b.push(macro @:privateAccess $i{tmp}.out.writeByte(0x00));      // object terminator
                     b.push(macro $i{tmp});
                     return { expr : EBlock(b), pos : currentPos() };
+                case _:
+                    break;
+                }
+            case TInst(_.get() => x, params):
+                switch [x, params] {
+                case [{ module : "String", name : "String" }, []]:  // string
+                    return macro $ethis.appendString($key, $val);
+                case [{ module : "haxe.Int64", name : "Int64" }, []]:  // int64 if haxe_ver < 3.2
+                    return macro $ethis.appendInt64($key, $val);
+                case [{ module : "Date", name : "Date" }, []]:  // date
+                    return macro $ethis.appendDate($key, $val);
+                case [{ module : "mongodb.ObjectId", name : "ObjectId" }, []]:  // objectId
+                    return macro $ethis.appendObjectId($key, $val);
+                case [{ module : "haxe.io.Bytes", name : "Bytes" }, []]:
+                    return macro $ethis.appendBytes($key, $val);
                 case _:
                     break;
                 }
